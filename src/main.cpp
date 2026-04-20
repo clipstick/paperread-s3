@@ -1731,6 +1731,6 @@ void app_main()
   ESP_LOGI("main", "epub list state is_loaded=%d", epub_list_state.is_loaded);
   ESP_LOGI("main", "epub list state selected_item=%d", epub_list_state.selected_item);
 
-  ESP_LOGI("main", "Memory before main task start %d", esp_get_free_heap_size());
+  ESP_LOGI("main", "Memory before main task start %lu", esp_get_free_heap_size());
   xTaskCreatePinnedToCore(main_task, "main_task", 32768, NULL, 1, NULL, 1);
 }

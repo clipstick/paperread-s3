@@ -24,7 +24,7 @@ EpubReader::~EpubReader()
 
 bool EpubReader::load()
 {
-  ESP_LOGD(TAG, "Before epub load: %d", esp_get_free_heap_size());
+  ESP_LOGD(TAG, "Before epub load: %lu", esp_get_free_heap_size());
   // do we need to load the epub?
   if (!epub || epub->get_path() != state.path)
   {
@@ -52,7 +52,7 @@ bool EpubReader::load()
       epub = nullptr;
       return false;
     }
-    ESP_LOGD(TAG, "After epub load: %d", esp_get_free_heap_size());
+    ESP_LOGD(TAG, "After epub load: %lu", esp_get_free_heap_size());
   }
   return true;
 }
@@ -86,7 +86,7 @@ void EpubReader::parse_and_layout_current_section()
 
   renderer->show_busy();
   ESP_LOGD(TAG, "Parse and render section %d", state.current_section);
-  ESP_LOGD(TAG, "Before read html: %d", esp_get_free_heap_size());
+  ESP_LOGD(TAG, "Before read html: %lu", esp_get_free_heap_size());
 
   std::string item = epub->get_spine_item(state.current_section);
   if (item.empty())
@@ -101,14 +101,14 @@ void EpubReader::parse_and_layout_current_section()
     ESP_LOGE(TAG, "Failed to read HTML for spine item '%s'", item.c_str());
     return;
   }
-  ESP_LOGD(TAG, "After read html: %d", esp_get_free_heap_size());
+  ESP_LOGD(TAG, "After read html: %lu", esp_get_free_heap_size());
   delete parser;
   parser = new RubbishHtmlParser(html, strlen(html), base_path, use_justified);
   parser_section = state.current_section;
   free(html);
-  ESP_LOGD(TAG, "After parse: %d", esp_get_free_heap_size());
+  ESP_LOGD(TAG, "After parse: %lu", esp_get_free_heap_size());
   parser->layout(renderer, epub);
-  ESP_LOGD(TAG, "After layout: %d", esp_get_free_heap_size());
+  ESP_LOGD(TAG, "After layout: %lu", esp_get_free_heap_size());
   state.pages_in_current_section = parser->get_page_count();
 }
 
@@ -245,7 +245,7 @@ void EpubReader::render()
   parser->render_page(state.current_page, renderer, epub);
 
   ESP_LOGD(TAG, "rendered page %d of %d", state.current_page, parser->get_page_count());
-  ESP_LOGD(TAG, "after render: %d", esp_get_free_heap_size());
+  ESP_LOGD(TAG, "after render: %lu", esp_get_free_heap_size());
 }
 
 void EpubReader::set_state_section(uint16_t current_section) {

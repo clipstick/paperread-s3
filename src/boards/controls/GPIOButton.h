@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <hal/gpio_types.h>
 #include <functional>
 
