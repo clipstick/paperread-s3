@@ -63,4 +63,5 @@ private:
 
   // State
   bool m_initialized;
+  bool m_owns_i2c;  // True if we installed the I2C driver ourselves
 };

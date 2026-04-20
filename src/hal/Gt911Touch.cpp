@@ -24,12 +24,13 @@ Gt911Touch::Gt911Touch(i2c_port_t i2c_port, gpio_num_t sda_pin, gpio_num_t scl_p
     m_i2c_addr(0),
     m_display_width(960),
     m_display_height(540),
-    m_initialized(false)
+    m_initialized(false),
+    m_owns_i2c(false)
 {
 }
 
 Gt911Touch::~Gt911Touch() {
-  if (m_initialized && m_i2c_port != I2C_NUM_MAX) {
+  if (m_initialized && m_owns_i2c && m_i2c_port != I2C_NUM_MAX) {
     i2c_driver_delete(m_i2c_port);
   }
 }
@@ -42,42 +43,61 @@ bool Gt911Touch::init() {
 
   LOG_I(TAG, "Initializing GT911 touch controller");
 
-  // Configure I2C
-  i2c_config_t conf = {};
-  conf.mode = I2C_MODE_MASTER;
-  conf.sda_io_num = m_sda_pin;
-  conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-  conf.scl_io_num = m_scl_pin;
-  conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-  conf.master.clk_speed = 400000;  // 400kHz
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
-  conf.clk_flags = 0;
-#endif
-
-  esp_err_t err = i2c_param_config(m_i2c_port, &conf);
-  if (err != ESP_OK) {
-    LOG_E(TAG, "I2C param config failed: %d", err);
-    return false;
-  }
-
-  err = i2c_driver_install(m_i2c_port, I2C_MODE_MASTER, 0, 0, 0);
-  if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
-    LOG_E(TAG, "I2C driver install failed: %d", err);
-    return false;
-  }
-
-  // Detect GT911 at either possible address
+  // First, try to detect GT911 without initializing I2C ourselves.
+  // The epdiy display driver (or other code) may have already set up I2C_NUM_0.
+  // Calling i2c_param_config on an active driver corrupts its state.
+  bool i2c_already_up = false;
   uint8_t test_byte = 0;
   if (read_reg(GT911_ADDR1, GT911_REG_CONFIG, &test_byte, 1) == ESP_OK) {
     m_i2c_addr = GT911_ADDR1;
-    LOG_I(TAG, "GT911 detected at address 0x%02X", m_i2c_addr);
+    i2c_already_up = true;
+    LOG_I(TAG, "GT911 detected at address 0x%02X (I2C already running)", m_i2c_addr);
   } else if (read_reg(GT911_ADDR2, GT911_REG_CONFIG, &test_byte, 1) == ESP_OK) {
     m_i2c_addr = GT911_ADDR2;
-    LOG_I(TAG, "GT911 detected at address 0x%02X", m_i2c_addr);
-  } else {
-    LOG_E(TAG, "GT911 not found on I2C bus");
-    i2c_driver_delete(m_i2c_port);
-    return false;
+    i2c_already_up = true;
+    LOG_I(TAG, "GT911 detected at address 0x%02X (I2C already running)", m_i2c_addr);
+  }
+
+  if (!i2c_already_up) {
+    // I2C not yet initialized - set it up ourselves
+    LOG_I(TAG, "I2C not running, initializing bus");
+
+    i2c_config_t conf = {};
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = m_sda_pin;
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.scl_io_num = m_scl_pin;
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.master.clk_speed = 400000;  // 400kHz
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 3, 0)
+    conf.clk_flags = 0;
+#endif
+
+    esp_err_t err = i2c_param_config(m_i2c_port, &conf);
+    if (err != ESP_OK) {
+      LOG_E(TAG, "I2C param config failed: %d", err);
+      return false;
+    }
+
+    err = i2c_driver_install(m_i2c_port, I2C_MODE_MASTER, 0, 0, 0);
+    if (err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
+      LOG_E(TAG, "I2C driver install failed: %s (%d)", esp_err_to_name(err), err);
+      return false;
+    }
+    m_owns_i2c = true;
+
+    // Now try to detect GT911
+    if (read_reg(GT911_ADDR1, GT911_REG_CONFIG, &test_byte, 1) == ESP_OK) {
+      m_i2c_addr = GT911_ADDR1;
+      LOG_I(TAG, "GT911 detected at address 0x%02X", m_i2c_addr);
+    } else if (read_reg(GT911_ADDR2, GT911_REG_CONFIG, &test_byte, 1) == ESP_OK) {
+      m_i2c_addr = GT911_ADDR2;
+      LOG_I(TAG, "GT911 detected at address 0x%02X", m_i2c_addr);
+    } else {
+      LOG_E(TAG, "GT911 not found on I2C bus");
+      i2c_driver_delete(m_i2c_port);
+      return false;
+    }
   }
 
   m_initialized = true;

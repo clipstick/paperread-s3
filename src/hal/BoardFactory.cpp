@@ -52,19 +52,21 @@ Board* BoardFactory::create_paper_s3() {
   board->name = "M5Stack Paper S3";
   board->version = "1.0";
 
-  // Display: epdiy with ED047TC2 panel (960x540)
-  LOG_I(TAG, "Initializing display driver");
-  board->display = new EpdiyDisplay();
-
-  // Touch: GT911 on I2C0
+  // Touch: GT911 on I2C1 (I2C0 is used by epdiy display driver)
+  // IMPORTANT: Initialize touch I2C BEFORE display, because epdiy's
+  // display init corrupts heap metadata for subsequent I2C allocations.
   // SDA=GPIO41, SCL=GPIO42, INT=GPIO48
   LOG_I(TAG, "Initializing touch driver");
   board->touch = new Gt911Touch(
-    I2C_NUM_0,
+    I2C_NUM_1,
     GPIO_NUM_41,  // SDA
     GPIO_NUM_42,  // SCL
     GPIO_NUM_48   // INT (not used in polling mode)
   );
+
+  // Display: epdiy with ED047TC2 panel (960x540)
+  LOG_I(TAG, "Initializing display driver");
+  board->display = new EpdiyDisplay();
 
   // Battery: ADC monitoring via GPIO3 (ADC1_CHANNEL_2) with 2:1 divider
   LOG_I(TAG, "Initializing battery driver");

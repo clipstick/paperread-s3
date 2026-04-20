@@ -27,8 +27,9 @@ EpdiyDisplay::EpdiyDisplay()
 EpdiyDisplay::~EpdiyDisplay() {
   if (m_initialized) {
     power_off();
-    epd_deinit();
-    // Note: epdiy doesn't provide epd_hl_deinit, cleanup is done by epd_deinit
+    // Note: Do NOT call epd_deinit() - epdiy's Paper S3 board deinit has a bug
+    // where it tries to reset an invalid GPIO, causing an assert failure.
+    // In practice the display lives for the entire app lifetime.
   }
 }
 
