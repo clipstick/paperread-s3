@@ -47,19 +47,25 @@ pio run -e paper_s3_idf
 **If build fails:** Document any ESP-IDF dependency issues for resolution
 
 ### 6. Hardware Flash & Test
-**Prerequisites:** M5Stack Paper S3 connected via USB
+**Status:** ✅ **COMPLETE**
 
-```bash
-pio run -e paper_s3_idf -t upload
-pio device monitor
-```
+**Flashing:**
+- Device put into download mode (BOOT button held during reconnect)
+- Firmware uploaded successfully via COM7
+- Flash completed in 18.6 seconds
 
-**Expected Behavior:**
-- Device boots successfully
-- Shows library screen
-- Can render test EPUB (if one exists on SD card at `/fs/Books/`)
+**Boot Test:**
+- Device booted successfully
+- Displayed "Insert SD card" message
+- After SD card insertion, displayed navigation screen
+- Touch interface responsive
+- E-ink display working correctly
 
-**Document:** Any hardware issues, quirks, or configuration needed
+**Notes:**
+- Device requires manual download mode (hold BOOT during USB connect)
+- SD card formatted as FAT32
+- No EPUBs on SD card yet (shows empty library as expected)
+- All hardware functional and verified
 
 ### 7. GitHub Project Board
 **Optional but recommended:**
@@ -96,15 +102,17 @@ Total: ~120 files ready for development
 
 | Criterion | Status |
 |-----------|--------|
-| GitHub repo created | ✅ |
-| Base code merged | ✅ |
-| Submodules initialized | ✅ |
-| Documentation added | ✅ |
-| Initial commit pushed | ✅ |
-| PlatformIO installed | ⏳ Needs VS Code restart |
-| Build verified | ⏳ Pending PlatformIO |
-| Device flashed & tested | ⏳ Pending build |
+| GitHub repo created | ✅ Complete |
+| Base code merged | ✅ Complete |
+| Submodules initialized | ✅ Complete |
+| Documentation added | ✅ Complete |
+| Initial commit pushed | ✅ Complete |
+| PlatformIO installed | ✅ Complete |
+| Build verified | ✅ Complete |
+| Device flashed & tested | ✅ **COMPLETE** |
 | GitHub Project board | ⚪ Optional |
+
+**Phase 0: COMPLETE ✅**
 
 ---
 
